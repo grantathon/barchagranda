@@ -81,9 +81,12 @@ if __name__ == "__main__":
 		# Create weight matrix and bias vector
 		W.append(weight_variable([input_count, output_count]))
 		b.append(bias_variable([output_count]))
-		
+
 		# Create hidden layer
-		h.append(tf.nn.relu(tf.matmul(x, W[i]) + b[i]))
+		if(j != 0):
+			h.append(tf.nn.relu(tf.matmul(h_drop[j-1], W[j]) + b[j]))
+		else:
+			h.append(tf.nn.relu(tf.matmul(x, W[j]) + b[j]))
 
 		# Perform dropout on hidden layer
 		h_drop.append(tf.nn.dropout(h[i], dr[i]))

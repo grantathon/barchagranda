@@ -143,18 +143,24 @@ if __name__ == "__main__":
 				h_drop = []
 				for j in range(i+1):
 					# Determine proper dimensions for weight matrix and bias vector
-					if(j == 0):
-						input_count = input_neuron_count
-					else:
+					if(j != 0):
 						input_count = layer_neurons[j-1]
+					else:
+						input_count = input_neuron_count
 					output_count = layer_neurons[j]
+					pprint(layer_neurons)
+					pprint(input_count)
+					pprint(output_count)
 
 					# Create weight matrix and bias vector
 					W.append(weight_variable([input_count, output_count]))
 					b.append(bias_variable([output_count]))
 					
 					# Create hidden layer
-					h.append(tf.nn.relu(tf.matmul(x, W[j]) + b[j]))
+					if(j != 0):
+						h.append(tf.nn.relu(tf.matmul(h_drop[j-1], W[j]) + b[j]))
+					else:
+						h.append(tf.nn.relu(tf.matmul(x, W[j]) + b[j]))
 
 					# Perform dropout on hidden layer
 					h_drop.append(tf.nn.dropout(h[j], dr[j]))
