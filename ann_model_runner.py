@@ -78,6 +78,9 @@ if __name__ == "__main__":
 			input_count = layer_neurons[i-1]
 		output_count = layer_neurons[i]
 
+		# Perform dropout on hidden layer
+		h_drop.append(tf.nn.dropout(h[i], dr[i]))
+
 		# Create weight matrix and bias vector
 		W.append(weight_variable([input_count, output_count]))
 		b.append(bias_variable([output_count]))
@@ -87,9 +90,6 @@ if __name__ == "__main__":
 			h.append(tf.nn.relu(tf.matmul(h_drop[j-1], W[j]) + b[j]))
 		else:
 			h.append(tf.nn.relu(tf.matmul(x, W[j]) + b[j]))
-
-		# Perform dropout on hidden layer
-		h_drop.append(tf.nn.dropout(h[i], dr[i]))
 
 		# Check if hidden layer is connected to output layer
 		if(i == layer_count-1):
