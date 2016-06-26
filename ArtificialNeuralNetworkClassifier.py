@@ -1,6 +1,5 @@
 import tensorflow as tf
 import random
-from pprint import pprint
 
 
 class ArtificialNeuralNetworkClassifier(object):
@@ -22,14 +21,6 @@ class ArtificialNeuralNetworkClassifier(object):
 
 		self.__create_ann(session)
 
-	def __weight_variable(self, shape):
-		initial = tf.truncated_normal(shape, stddev=0.1)
-		return tf.Variable(initial)
-
-	def __bias_variable(self, shape):
-		initial = tf.constant(0.1, shape=shape)
-		return tf.Variable(initial)
-
 	def train(self, session, features, labels, num_iterations, batch_size, verbose=False):
 		# Iteratively train the ANN
 		for i in range(num_iterations):
@@ -44,7 +35,8 @@ class ArtificialNeuralNetworkClassifier(object):
 			self.train_step.run(feed_dict={self.x: features[idx], self.y_: labels[idx], self.dr: self.dropout_rates})
 
 	def predict(self, session, features):
-		return self.y.eval(feed_dict={self.x: features})
+		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
+		return self.y.eval(feed_dict={self.x: features, self.dr: eval_drs})
 
 	def log_loss(self, session, features, labels):
 		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
@@ -53,6 +45,14 @@ class ArtificialNeuralNetworkClassifier(object):
 	def matches(self, session, features, labels):
 		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
 		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
+
+	def __weight_variable(self, shape):
+		initial = tf.truncated_normal(shape, stddev=0.1)
+		return tf.Variable(initial)
+
+	def __bias_variable(self, shape):
+		initial = tf.constant(0.1, shape=shape)
+		return tf.Variable(initial)
 
 	def __create_ann(self, session):
 		# Placeholders for training examples and labels

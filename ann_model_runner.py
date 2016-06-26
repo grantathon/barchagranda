@@ -3,18 +3,10 @@ import pandas as pd
 import numpy as np
 import json
 import random
+from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
 from datetime import datetime
 from pprint import pprint
 from read_numerai import *
-
-
-def weight_variable(shape):
-	initial = tf.truncated_normal(shape, stddev=0.1)
-	return tf.Variable(initial)
-
-def bias_variable(shape):
-	initial = tf.constant(0.1, shape=shape)
-	return tf.Variable(initial)
 
 
 if __name__ == "__main__":
@@ -28,14 +20,14 @@ if __name__ == "__main__":
 		config_data = json.loads(f.read())
 
 	# Get model selector parameters
-	input_neuron_count = int(config_data['input_neuron_count'])
-	output_neuron_count = int(config_data['output_neuron_count'])
-	example_count = int(config_data['example_count'])
-	layer_neurons = config_data['layer_neurons']
+	num_input_neurons = int(config_data['num_input_neurons'])
+	num_output_neurons = int(config_data['num_output_neurons'])
+	num_examples = int(config_data['num_examples'])
+	hidden_layers = config_data['hidden_layers']
 	dropout_rates = config_data['dropout_rates']
-	iteration_count = int(config_data['iteration_count'])
+	num_iterations = int(config_data['num_iterations'])
 	batch_size = int(config_data['batch_size'])
-	layer_count = len(layer_neurons)
+	num_hidden_layers = len(hidden_layers)
 
 	# Get system parameters
 	data_reader_uri = config_data['data_reader_uri']
@@ -45,7 +37,7 @@ if __name__ == "__main__":
 
 	# Read training and testing data
 	print('Loading data...')
-	train_features, _, tourney_features, train_labels, _, tourney_ids = read_numerai(data_uri, example_count, 0, 1)
+	train_features, _, tourney_features, train_labels, _, tourney_ids = read_numerai(data_uri, num_examples, 0, 1)
 	print('Data loaded!')
 	print
 
@@ -58,74 +50,24 @@ if __name__ == "__main__":
 	# Start TensorFlow session
 	sess = tf.InteractiveSession()
 
-	# Placeholders for training examples and labels
-	x = tf.placeholder(tf.float32, [None, input_neuron_count])
-	y_ = tf.placeholder(tf.float32, [None, output_neuron_count])
+	# Setup neurons-layers
+	neurons = [num_input_neurons, num_output_neurons]
+	if(hidden_layers):
+		for i in range(num_hidden_layers):
+			neurons.insert(i+1, hidden_layers[i])
+	else:
+		raise NotImplementedError('Logistic regression is not yet supported.')
 
-	# Variable for dropout rates
-	dr = tf.Variable(dropout_rates)
-
-	# Construct the ANN layer by layer
-	W = []
-	b = []
-	h = []
-	h_drop = []
-	for i in range(layer_count):
-		# Determine proper dimensions for weight matrix and bias vector
-		if(i == 0):
-			input_count = input_neuron_count
-		else:
-			input_count = layer_neurons[i-1]
-		output_count = layer_neurons[i]
-
-		# Perform dropout on hidden layer
-		h_drop.append(tf.nn.dropout(h[i], dr[i]))
-
-		# Create weight matrix and bias vector
-		W.append(weight_variable([input_count, output_count]))
-		b.append(bias_variable([output_count]))
-
-		# Create hidden layer
-		if(j != 0):
-			h.append(tf.nn.relu(tf.matmul(h_drop[j-1], W[j]) + b[j]))
-		else:
-			h.append(tf.nn.relu(tf.matmul(x, W[j]) + b[j]))
-
-		# Check if hidden layer is connected to output layer
-		if(i == layer_count-1):
-			# Create weight matrix and bias vector
-			W.append(weight_variable([output_count, output_neuron_count]))
-			b.append(bias_variable([output_neuron_count]))
-
-			# Create output layer
-			y = tf.nn.softmax(tf.matmul(h_drop[i], W[i+1]) + b[i+1])
-
-	# Implement cross-entropy (i.e., log loss) as loss function
-	cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_*tf.log(y), reduction_indices=[1]))
-
-	# Initialize optimizer
-	# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-	train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-
-	# Initialize variables
-	sess.run(tf.initialize_all_variables())
-
-	# Iteratively train the ANN
-	for i in range(iteration_count):
-		# Periodically evaluate accuracy
-		if(i % 1000 == 0):
-			train_log_loss = cross_entropy.eval(feed_dict={x: train_features, y_: train_labels})
-			print("Step %d, training log loss %.5f" % (i, train_log_loss))
-
-		# Generate random indices and run training step
-		idx = random.sample(xrange(len(train_features)-1), batch_size)
-		train_step.run(feed_dict={x: train_features[idx], y_: train_labels[idx]})
+	# Create and train the ANN
+	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
+	ann.train(sess, train_features, train_labels, num_iterations, batch_size, True)
 
 	# Display final log loss
-	print('Final training log loss: %.5f' % cross_entropy.eval(feed_dict={x: train_features, y_: train_labels}))
+	print('Final training log loss: %.5f' % ann.log_loss(sess, train_features, train_labels))
 
 	# Make predictions on unlabeled (tournament) examples
-	probabilities = y.eval(feed_dict={x: tourney_features})
+	probabilities = ann.predict(sess, tourney_features)
+	pprint(probabilities)
 
 	# Create a data frame with the results and save
 	print

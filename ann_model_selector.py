@@ -131,7 +131,7 @@ if __name__ == "__main__":
 		num_hidden_layers = len(hidden_layers)
 		num_dropout_rates = len(dropout_rates)
 
-		# Setup neuron-layer
+		# Setup neurons-layers
 		neurons = [num_input_neurons, num_output_neurons]
 		if(parameter_set['hidden_layers']):
 			for i in range(num_hidden_layers):
