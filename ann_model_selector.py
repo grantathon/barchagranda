@@ -2,11 +2,9 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import json
-import random
 from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
 from sklearn.cross_validation import KFold
 from datetime import datetime
-from pprint import pprint
 from read_numerai import *
 
 

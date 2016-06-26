@@ -2,10 +2,8 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import json
-import random
 from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
 from datetime import datetime
-from pprint import pprint
 from read_numerai import *
 
 
@@ -67,7 +65,6 @@ if __name__ == "__main__":
 
 	# Make predictions on unlabeled (tournament) examples
 	probabilities = ann.predict(sess, tourney_features)
-	pprint(probabilities)
 
 	# Create a data frame with the results and save
 	print
