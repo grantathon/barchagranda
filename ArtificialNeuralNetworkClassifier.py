@@ -1,5 +1,5 @@
 import tensorflow as tf
-import random
+import numpy as np
 
 
 class ArtificialNeuralNetworkClassifier(object):
@@ -31,7 +31,7 @@ class ArtificialNeuralNetworkClassifier(object):
 				print("Step %d, training log loss %.5f" % (i, train_log_loss))
 
 			# Generate random indices and run training step
-			idx = random.sample(xrange(len(features)-1), batch_size)
+			idx = np.random.choice(xrange(len(features)-1), batch_size, replace=False)
 			self.train_step.run(feed_dict={self.x: features[idx], self.y_: labels[idx], self.dr: self.dropout_rates})
 
 	def predict(self, session, features):
@@ -47,11 +47,11 @@ class ArtificialNeuralNetworkClassifier(object):
 		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 
 	def __weight_variable(self, shape):
-		initial = tf.truncated_normal(shape, stddev=0.1)
+		initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
 		return tf.Variable(initial)
 
 	def __bias_variable(self, shape):
-		initial = tf.constant(0.1, shape=shape)
+		initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
 		return tf.Variable(initial)
 
 	def __create_ann(self, session):
@@ -102,7 +102,7 @@ class ArtificialNeuralNetworkClassifier(object):
 
 		# Initialize optimizer
 		# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-		self.train_step = tf.train.AdamOptimizer(1e-4).minimize(self.cross_entropy)
+		self.train_step = tf.train.AdamOptimizer(0.001).minimize(self.cross_entropy)
 
 		# Determine the accuracy of the model
 		self.correct_prediction = tf.equal(tf.argmax(self.y,1), tf.argmax(self.y_,1))
