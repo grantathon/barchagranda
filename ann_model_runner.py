@@ -8,10 +8,11 @@ from read_numerai import *
 
 
 if __name__ == "__main__":
-	if len(sys.argv) != 2:
-		print('Provided invalid input parameters, needs to be ([path to config file])')
+	if len(sys.argv) != 3:
+		print('Provided invalid input parameters, needs to be ([path to config file] [verbose?])')
 		exit(1)
 	config_uri = sys.argv[1]
+	verbose = int(sys.argv[2])
 
 	# Read configuration file
 	with open(config_uri, mode='r') as f:
@@ -46,7 +47,10 @@ if __name__ == "__main__":
 		tourney_features[:,i] = (tourney_features[:,i] - np.mean(tourney_features[:,i])) / np.std(tourney_features[:,i])
 
 	# Start TensorFlow session
-	sess = tf.InteractiveSession()
+	if(verbose):
+		sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+	else:
+		sess = tf.InteractiveSession()
 
 	# Setup neurons-layers
 	neurons = [num_input_neurons, num_output_neurons]

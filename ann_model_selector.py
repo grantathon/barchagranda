@@ -60,10 +60,11 @@ def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
 
 
 if __name__ == "__main__":
-	if len(sys.argv) != 2:
-		print('Provided invalid input parameters, needs to be ([path to config file])')
+	if len(sys.argv) != 3:
+		print('Provided invalid input parameters, needs to be ([path to config file] [verbose?])')
 		exit(1)
 	config_uri = sys.argv[1]
+	verbose = int(sys.argv[2])
 
 	# Read configuration file
 	with open(config_uri, mode='r') as f:
@@ -118,7 +119,10 @@ if __name__ == "__main__":
 	}
 
 	# Start TensorFlow session
-	sess = tf.InteractiveSession()
+	if(verbose):
+		sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+	else:
+		sess = tf.InteractiveSession()
 
 	# Evaluate each ANN parameter set
 	n = 1
