@@ -26,28 +26,28 @@ def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
 			parameter_dict['dropout_rates'] = None
 			parameter_sets.append(parameter_dict)
 		elif(num_hidden_layers == 1):
-			for i in range(num_dropout_rates):
-				for j in range(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
+			for i in xrange(num_dropout_rates):
+				for j in xrange(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
 					parameter_dict = {}
 					parameter_dict['hidden_layers'] = [j]
 					parameter_dict['dropout_rates'] = [round(dropout_rates[i], 4)]
 					parameter_sets.append(parameter_dict)
 		elif(num_hidden_layers == 2):
-			for i in range(num_dropout_rates):
-				for m in range(num_dropout_rates):
-					for j in range(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
-						for k in range(j, hls[num_hidden_layers-2][1]+1):
+			for i in xrange(num_dropout_rates):
+				for m in xrange(num_dropout_rates):
+					for j in xrange(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
+						for k in xrange(j, hls[num_hidden_layers-2][1]+1):
 							parameter_dict = {}
 							parameter_dict['hidden_layers'] = [k, j]
 							parameter_dict['dropout_rates'] = [round(dropout_rates[i], 4), round(dropout_rates[m], 4)]
 							parameter_sets.append(parameter_dict)
 		elif(num_hidden_layers == 3):
-			for i in range(num_dropout_rates):
-				for n in range(num_dropout_rates):
-					for p in range(num_dropout_rates):
-						for j in range(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
-							for k in range(j, hls[num_hidden_layers-2][1]+1):
-								for m in range(k, hls[num_hidden_layers-3][1]+1):
+			for i in xrange(num_dropout_rates):
+				for n in xrange(num_dropout_rates):
+					for p in xrange(num_dropout_rates):
+						for j in xrange(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
+							for k in xrange(j, hls[num_hidden_layers-2][1]+1):
+								for m in xrange(k, hls[num_hidden_layers-3][1]+1):
 									parameter_dict = {}
 									parameter_dict['hidden_layers'] = [m, k, j]
 									parameter_dict['dropout_rates'] = [round(dropout_rates[i], 4), round(dropout_rates[n], 4), \
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 	k_folds_idx = KFold(num_examples, n_folds=k_cross_folds)
 
 	# Normalize features
-	for i in range(features.shape[1]):
+	for i in xrange(features.shape[1]):
 		features[:,i] = (features[:,i] - np.mean(features[:,i])) / np.std(features[:,i])
 
 	# Initialize results
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 		# Setup neurons-layers
 		neurons = [num_input_neurons, num_output_neurons]
 		if(parameter_set['hidden_layers']):
-			for i in range(num_hidden_layers):
+			for i in xrange(num_hidden_layers):
 				neurons.insert(i+1, parameter_set['hidden_layers'][i])
 		else:
 			raise NotImplementedError('Logistic regression is not yet supported.')

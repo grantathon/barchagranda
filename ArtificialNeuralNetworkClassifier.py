@@ -26,7 +26,7 @@ class ArtificialNeuralNetworkClassifier(object):
 		for i in range(num_iterations):
 			# Periodically evaluate accuracy
 			if(verbose and i % 100 == 0):
-				eval_drs = [1.0 for j in range(self.num_dropout_rates)]
+				eval_drs = [1.0 for j in xrange(self.num_dropout_rates)]
 				train_log_loss = self.cross_entropy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 				print("Step %d, training log loss %.5f" % (i, train_log_loss))
 
@@ -35,15 +35,15 @@ class ArtificialNeuralNetworkClassifier(object):
 			self.train_step.run(feed_dict={self.x: features[idx], self.y_: labels[idx], self.dr: self.dropout_rates})
 
 	def predict(self, session, features):
-		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
+		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
 		return self.y.eval(feed_dict={self.x: features, self.dr: eval_drs})
 
 	def log_loss(self, session, features, labels):
-		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
+		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
 		return self.cross_entropy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 
 	def matches(self, session, features, labels):
-		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
+		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
 		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 
 	def __weight_variable(self, shape):
@@ -51,7 +51,8 @@ class ArtificialNeuralNetworkClassifier(object):
 		return tf.Variable(initial)
 
 	def __bias_variable(self, shape):
-		initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
+		initial = tf.constant(0.1, shape=shape)
+		# initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
 		return tf.Variable(initial)
 
 	def __create_ann(self, session):
@@ -67,7 +68,7 @@ class ArtificialNeuralNetworkClassifier(object):
 		b = []
 		h = []
 		h_drop = []
-		for i in range(self.num_hidden_layers):
+		for i in xrange(self.num_hidden_layers):
 			# Determine proper dimensions for weight matrix and bias vector
 			if(i != 0):
 				input_count = self.layer_neurons[i-1]

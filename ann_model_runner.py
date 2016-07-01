@@ -40,9 +40,9 @@ if __name__ == "__main__":
 	print
 
 	# Normalize features
-	for i in range(train_features.shape[1]):
+	for i in xrange(train_features.shape[1]):
 		train_features[:,i] = (train_features[:,i] - np.mean(train_features[:,i])) / np.std(train_features[:,i])
-	for i in range(tourney_features.shape[1]):
+	for i in xrange(tourney_features.shape[1]):
 		tourney_features[:,i] = (tourney_features[:,i] - np.mean(tourney_features[:,i])) / np.std(tourney_features[:,i])
 
 	# Start TensorFlow session
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 	# Setup neurons-layers
 	neurons = [num_input_neurons, num_output_neurons]
 	if(hidden_layers):
-		for i in range(num_hidden_layers):
+		for i in xrange(num_hidden_layers):
 			neurons.insert(i+1, hidden_layers[i])
 	else:
 		raise NotImplementedError('Logistic regression is not yet supported.')
