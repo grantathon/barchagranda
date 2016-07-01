@@ -60,7 +60,7 @@ target/
 *.png
 
 # Data ouputs
-*.csv
+#*.csv
 *.p
 *.txt
 
@@ -70,4 +70,4 @@ target/
 
 # Misc. directories
 results/
-config/
+#config/
