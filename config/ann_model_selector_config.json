@@ -11,7 +11,7 @@
     "batch_size"            : 1000,
 
     "data_reader_uri"       : "read_numerai.py",
-    "data_uri"              : "../numerai/numerai_datasets_20160701/",
+    "data_uri"              : "data/numerai_datasets_20160701/",
     "log_uri"				: "log/",
     "results_uri"			: "results/"
 }
