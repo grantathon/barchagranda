@@ -60,7 +60,7 @@ target/
 *.png
 
 # Data ouputs
-#*.csv
+*.csv
 *.p
 *.txt
 
@@ -69,5 +69,6 @@ target/
 *.sublime-project
 
 # Misc. directories
+data/
 results/
-#config/
+config/
