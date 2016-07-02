@@ -2,7 +2,6 @@ import os
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-import csv
 import json
 import dropbox
 from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
@@ -14,7 +13,7 @@ DROPBOX_AUTH_TOKEN = 'qECz4Lio64gAAAAAAAADKCBiIafW0-teoaxb7jaNJVjcn517S7mH0l7rwj
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
-		print('Provided invalid input parameters, needs to be ([path to config file] [verbose?])')
+		print('Provided invalid input parameters, needs to be ([config filename] [verbose?])')
 		exit(1)
 	config_filename = sys.argv[1]
 	verbose = int(sys.argv[2])
@@ -41,7 +40,7 @@ if __name__ == "__main__":
 
 	# Get system parameters
 	data_reader_uri = config_data['data_reader_uri']
-	data_uri = config_data['data_uri']
+	data_dir = config_data['data_dir']
 	training_filename = config_data['training_filename']
 	tournament_filename = config_data['tournament_filename']
 
@@ -50,7 +49,7 @@ if __name__ == "__main__":
 		os.makedirs("data")
 
 	# Before pulling data, check if it already exists locally
-	local_data_uri = "data/" + data_uri + "/"
+	local_data_uri = "data/" + data_dir + "/"
 	train_exists = os.path.exists(local_data_uri + training_filename)
 	tourney_exists = os.path.exists(local_data_uri + tournament_filename)
 	if(not train_exists or not tourney_exists):

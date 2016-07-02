@@ -1,11 +1,15 @@
+import os
 import tensorflow as tf
 import pandas as pd
 import numpy as np
 import json
+import dropbox
 from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
 from sklearn.cross_validation import KFold
 from datetime import datetime
 from read_numerai import *
+
+DROPBOX_AUTH_TOKEN = 'qECz4Lio64gAAAAAAAADKCBiIafW0-teoaxb7jaNJVjcn517S7mH0l7rwjZXbThX'
 
 
 def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
@@ -61,14 +65,20 @@ def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
-		print('Provided invalid input parameters, needs to be ([path to config file] [verbose?])')
+		print('Provided invalid input parameters, needs to be ([config filename] [verbose?])')
 		exit(1)
-	config_uri = sys.argv[1]
+	config_filename = sys.argv[1]
 	verbose = int(sys.argv[2])
 
-	# Read configuration file
-	with open(config_uri, mode='r') as f:
-		config_data = json.loads(f.read())
+	# Initialize the Dropbox client
+	client = dropbox.client.DropboxClient(DROPBOX_AUTH_TOKEN)
+	
+	# Download configuration file from Dropbox
+	print('Downloading configuration file...')
+	f, metadata = client.get_file_and_metadata('config/' + config_filename)
+	print('Configuration file downloaded!')
+	print
+	config_data = json.loads(f.read())
 
 	# Get model selector config parameters
 	num_input_neurons = int(config_data['num_input_neurons'])
@@ -82,18 +92,36 @@ if __name__ == "__main__":
 
 	# Get system config parameters
 	data_reader_uri = config_data['data_reader_uri']
-	data_uri = config_data['data_uri']
-	log_uri = config_data['log_uri']
-	results_uri = config_data['results_uri']
+	data_dir = config_data['data_dir']
+	training_filename = config_data['training_filename']
 
-	# Create the parameters needed to setup multiple scenarios of ANN archictures
-	parameter_sets = create_parameter_sets(hidden_layer_spaces, dropout_rate_space)
+	# Check if the data directory exists
+	if(not os.path.isdir("data")):
+		os.makedirs("data")
+
+	# Before pulling data, check if it already exists locally
+	local_data_uri = "data/" + data_dir + "/"
+	train_exists = os.path.exists(local_data_uri + training_filename)
+	if(not train_exists):
+		os.makedirs(local_data_uri)
+
+		# Download data locally from Dropbox
+		print('Downloading data...')
+		f, metadata = client.get_file_and_metadata(local_data_uri + training_filename)
+		out = open(local_data_uri + training_filename, 'w')
+		out.write(f.read())
+		out.close()
+		print('Data downloaded!')
+		print
 
 	# Read training and testing data
 	print('Loading data...')
-	features, _, _, labels, _, _ = read_numerai(data_uri, num_examples, 0, 1)
+	features, _, _, labels, _, _ = read_numerai(local_data_uri, num_examples, 0, 1)
 	print('Data loaded!')
 	print
+
+	# Create the parameters needed to setup multiple scenarios of ANN archictures
+	parameter_sets = create_parameter_sets(hidden_layer_spaces, dropout_rate_space)
 
 	# Determine the k-fold cross validation indicies for training and testing
 	k_folds_idx = KFold(num_examples, n_folds=k_cross_folds)
@@ -178,10 +206,21 @@ if __name__ == "__main__":
 
 		n += 1
 
-	# Output results
+	# Check if the data directory exists
+	if(not os.path.isdir("results")):
+		os.makedirs("results")
+
+	# Create a data frame with the results and save locally
 	print
 	print('Storing results...')
 	df = pd.DataFrame(results)
-	df.to_csv("results/ann_model_selector_results_%s.csv" % datetime.now(), index=False)
+	results_file_uri = "results/ann_model_selector_results_%s.csv" % datetime.now()
+	df.to_csv(results_file_uri, index=False)
 	print('Results stored!')
+	print
+
+	# Upload results to Dropbox
+	print('Uploading results...')
+	response = client.put_file(results_file_uri, f)
+	print('Results uploaded!')
 	print

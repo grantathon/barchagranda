@@ -19,7 +19,12 @@ def read_numerai(path, num_examples, testing_percent, vector_labels):
 
     # Read raw data
     raw_training_data = pd.read_csv(path + training_filename)
-    raw_tournament_data = pd.read_csv(path + tournament_filename)
+    tourney_exists = False
+    try:
+        raw_tournament_data = pd.read_csv(path + tournament_filename)
+        tourney_exists = True
+    except IOError:
+        pass
 
     # Make sure number of samples does not exceed count of traning and testing data
     max_train_count = int(raw_training_data.shape[0] * (1 - testing_percent))
@@ -37,8 +42,11 @@ def read_numerai(path, num_examples, testing_percent, vector_labels):
         test_features = raw_training_data[-test_count:].as_matrix(columns=raw_training_data.columns[:-1])
     else:
         test_features = []
-    tourney_features = raw_tournament_data.as_matrix(columns=raw_tournament_data.columns[1:])
-    tourney_ids = raw_tournament_data['t_id'].values
+    tourney_features = None
+    tourney_ids = None
+    if(tourney_exists):
+        tourney_features = raw_tournament_data.as_matrix(columns=raw_tournament_data.columns[1:])
+        tourney_ids = raw_tournament_data['t_id'].values
 
     # Setup labels as single- or multi-dimensional structures
     if(vector_labels):
