@@ -1,22 +1,33 @@
+import os
 import tensorflow as tf
 import pandas as pd
 import numpy as np
+import csv
 import json
+import dropbox
 from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
 from datetime import datetime
 from read_numerai import *
+
+DROPBOX_AUTH_TOKEN = 'qECz4Lio64gAAAAAAAADKCBiIafW0-teoaxb7jaNJVjcn517S7mH0l7rwjZXbThX'
 
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
 		print('Provided invalid input parameters, needs to be ([path to config file] [verbose?])')
 		exit(1)
-	config_uri = sys.argv[1]
+	config_filename = sys.argv[1]
 	verbose = int(sys.argv[2])
 
-	# Read configuration file
-	with open(config_uri, mode='r') as f:
-		config_data = json.loads(f.read())
+	# Initialize the Dropbox client
+	client = dropbox.client.DropboxClient(DROPBOX_AUTH_TOKEN)
+	
+	# Download configuration file from Dropbox
+	print('Downloading configuration file...')
+	f, metadata = client.get_file_and_metadata('config/' + config_filename)
+	print('Configuration file downloaded!')
+	print
+	config_data = json.loads(f.read())
 
 	# Get model selector parameters
 	num_input_neurons = int(config_data['num_input_neurons'])
@@ -31,12 +42,36 @@ if __name__ == "__main__":
 	# Get system parameters
 	data_reader_uri = config_data['data_reader_uri']
 	data_uri = config_data['data_uri']
-	log_uri = config_data['log_uri']
-	results_uri = config_data['results_uri']
+	training_filename = config_data['training_filename']
+	tournament_filename = config_data['tournament_filename']
+
+	# Check if the data directory exists
+	if(not os.path.isdir("data")):
+		os.makedirs("data")
+
+	# Before pulling data, check if it already exists locally
+	local_data_uri = "data/" + data_uri + "/"
+	train_exists = os.path.exists(local_data_uri + training_filename)
+	tourney_exists = os.path.exists(local_data_uri + tournament_filename)
+	if(not train_exists or not tourney_exists):
+		os.makedirs(local_data_uri)
+
+		# Download data locally from Dropbox
+		print('Downloading data...')
+		f, metadata = client.get_file_and_metadata(local_data_uri + training_filename)
+		out = open(local_data_uri + training_filename, 'w')
+		out.write(f.read())
+		out.close()
+		f, metadata = client.get_file_and_metadata(local_data_uri + tournament_filename)
+		out = open(local_data_uri + tournament_filename, 'w')
+		out.write(f.read())
+		out.close()
+		print('Data downloaded!')
+		print
 
 	# Read training and testing data
 	print('Loading data...')
-	train_features, _, tourney_features, train_labels, _, tourney_ids = read_numerai(data_uri, num_examples, 0, 1)
+	train_features, _, tourney_features, train_labels, _, tourney_ids = read_numerai(local_data_uri, num_examples, 0, 1)
 	print('Data loaded!')
 	print
 
@@ -66,16 +101,27 @@ if __name__ == "__main__":
 
 	# Display final log loss
 	print('Final training log loss: %.5f' % ann.log_loss(sess, train_features, train_labels))
+	print
 
 	# Make predictions on unlabeled (tournament) examples
 	probabilities = ann.predict(sess, tourney_features)
 
-	# Create a data frame with the results and save
-	print
+	# Check if the data directory exists
+	if(not os.path.isdir("results")):
+		os.makedirs("results")
+
+	# Create a data frame with the results and save locally
 	print('Storing results...')
 	idx = range(0, len(tourney_ids))
 	d = {'t_id': pd.Series(tourney_ids, idx), 'probability': pd.Series(probabilities[:,1], idx)}
 	df = pd.DataFrame(d)
-	df.to_csv("results/ann_model_runner_results_%s.csv" % datetime.now(), columns=['t_id', 'probability'], index=False)
+	results_file_uri = "results/ann_model_runner_results_%s.csv" % datetime.now()
+	df.to_csv(results_file_uri, columns=['t_id', 'probability'], index=False)
 	print('Results stored!')
+	print
+
+	# Upload results to Dropbox
+	print('Uploading results...')
+	response = client.put_file(results_file_uri, f)
+	print('Results uploaded!')
 	print
