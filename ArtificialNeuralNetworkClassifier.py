@@ -71,7 +71,7 @@ class ArtificialNeuralNetworkClassifier(object):
 		for i in xrange(self.num_hidden_layers):
 			# Determine proper dimensions for weight matrix and bias vector
 			if(i != 0):
-				input_count = self.layer_neurons[i-1]
+				input_count = self.layer_neurons[i]
 			else:
 				input_count = self.num_input_neurons
 			output_count = self.hidden_neurons[i]
