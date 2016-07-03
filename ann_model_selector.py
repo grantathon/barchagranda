@@ -188,8 +188,8 @@ if __name__ == "__main__":
 			kf_results['training_accuracy'].append(ann.matches(sess, features[training_idx], labels[training_idx]))
 
 			# Compute the testing accuracies
-			kf_results['testing_accuracy'].append(ann.log_loss(sess, features[testing_idx], labels[testing_idx]))
-			kf_results['testing_log_loss'].append(ann.matches(sess, features[testing_idx], labels[testing_idx]))
+			kf_results['testing_log_loss'].append(ann.log_loss(sess, features[testing_idx], labels[testing_idx]))
+			kf_results['testing_accuracy'].append(ann.matches(sess, features[testing_idx], labels[testing_idx]))
 
 		# Store results for later analysis
 		results['training_log_loss'].append(np.mean(kf_results['training_log_loss']))
