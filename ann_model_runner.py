@@ -121,6 +121,7 @@ if __name__ == "__main__":
 
 	# Upload results to Dropbox
 	print('Uploading results...')
+	f = open(results_file_uri, 'r')
 	response = client.put_file(results_file_uri, f)
 	print('Results uploaded!')
 	print
