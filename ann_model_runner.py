@@ -53,7 +53,8 @@ if __name__ == "__main__":
 	train_exists = os.path.exists(local_data_uri + training_filename)
 	tourney_exists = os.path.exists(local_data_uri + tournament_filename)
 	if(not train_exists or not tourney_exists):
-		os.makedirs(local_data_uri)
+		if(not os.path.exists(local_data_uri)):
+			os.makedirs(local_data_uri)
 
 		# Download data locally from Dropbox
 		print('Downloading data...')

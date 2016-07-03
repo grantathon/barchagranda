@@ -103,7 +103,8 @@ if __name__ == "__main__":
 	local_data_uri = "data/" + data_dir + "/"
 	train_exists = os.path.exists(local_data_uri + training_filename)
 	if(not train_exists):
-		os.makedirs(local_data_uri)
+		if(not os.path.exists(local_data_uri)):
+			os.makedirs(local_data_uri)
 
 		# Download data locally from Dropbox
 		print('Downloading data...')
