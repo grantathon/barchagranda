@@ -8,6 +8,7 @@ from ArtificialNeuralNetworkClassifier import ArtificialNeuralNetworkClassifier
 from sklearn.cross_validation import KFold
 from datetime import datetime
 from read_numerai import *
+from pprint import pprint
 
 DROPBOX_AUTH_TOKEN = 'qECz4Lio64gAAAAAAAADKCBiIafW0-teoaxb7jaNJVjcn517S7mH0l7rwjZXbThX'
 
@@ -49,6 +50,11 @@ def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
 			for i in xrange(num_dropout_rates):
 				for n in xrange(num_dropout_rates):
 					for p in xrange(num_dropout_rates):
+						# parameter_dict = {}
+						# parameter_dict['hidden_layers'] = [16, 11, 6]
+						# parameter_dict['dropout_rates'] = [round(dropout_rates[i], 4), round(dropout_rates[n], 4), \
+						# 	round(dropout_rates[p], 4)]
+						# parameter_sets.append(parameter_dict)
 						for j in xrange(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
 							for k in xrange(j, hls[num_hidden_layers-2][1]+1):
 								for m in xrange(k, hls[num_hidden_layers-3][1]+1):
@@ -123,6 +129,8 @@ if __name__ == "__main__":
 
 	# Create the parameters needed to setup multiple scenarios of ANN archictures
 	parameter_sets = create_parameter_sets(hidden_layer_spaces, dropout_rate_space)
+	# pprint(parameter_sets)
+	# exit(0)
 
 	# Determine the k-fold cross validation indicies for training and testing
 	k_folds_idx = KFold(num_examples, n_folds=k_cross_folds)

@@ -22,17 +22,23 @@ class ArtificialNeuralNetworkClassifier(object):
 		self.__create_ann(session)
 
 	def train(self, session, features, labels, num_iterations, batch_size, verbose=False):
-		# Iteratively train the ANN
-		for i in range(num_iterations):
+		num_examples = len(features)
+		num_batches = int(np.ceil(num_examples/float(batch_size)))
+
+		# Iteratively train the ANN for multiple epochs
+		for i in xrange(num_iterations):
+			# Shuffle training set into seperate batches
+			indices = np.random.permutation(num_examples)
+
+			# Run training step per batch
+			for j in xrange(num_batches):
+				batch_indices = indices[j*batch_size:(j+1)*batch_size]
+				self.train_step.run(feed_dict={self.x: features[batch_indices], self.y_: labels[batch_indices],
+					self.dr: self.dropout_rates})
+
 			# Periodically evaluate accuracy
 			if(verbose and i % 100 == 0):
-				eval_drs = [1.0 for j in xrange(self.num_dropout_rates)]
-				train_log_loss = self.cross_entropy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
-				print("Step %d, training log loss %.5f" % (i, train_log_loss))
-
-			# Generate random indices and run training step
-			idx = np.random.choice(xrange(len(features)-1), batch_size, replace=False)
-			self.train_step.run(feed_dict={self.x: features[idx], self.y_: labels[idx], self.dr: self.dropout_rates})
+				print("Epoch step %d, training log loss %.5f" % (i, self.log_loss(session, features, labels)))
 
 	def predict(self, session, features):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
@@ -45,6 +51,38 @@ class ArtificialNeuralNetworkClassifier(object):
 	def matches(self, session, features, labels):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
 		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
+
+	# @staticmethod
+	# def eval_one_layer_ann(features, labels, num_iterations, batch_size, k_folds, num_input_neurons, num_output_neurons,
+	# 	dropout_rate0, hidden_layer0):
+	# 	# Start session
+	# 	sess = tf.InteractiveSession()
+		
+	# 	# Setup neuron and dropout rates structures
+	# 	neurons = [num_input_neurons, hidden_layer0, num_output_neurons]
+	# 	dropout_rates = [dropout_rate0]
+
+	# 	# Create the ANN
+	# 	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
+
+	# 	# Determine the k-fold cross validation indicies for training and testing
+	# 	k_folds_idx = KFold(len(features), n_folds=k_folds)
+
+	# 	# TODO: Perform k-fold cross validation
+	# 	log_loss = []
+	# 	for training_idx, testing_idx in k_folds_idx:
+	# 		# Train the ANN
+	# 		ann.train(sess, features[training_idx], labels[training_idx], num_iterations, batch_size, False)
+
+	# 		# Evaluate and save the ANN's accuracy
+	# 		log_loss.append(ann.log_loss(sess, features[testing_idx], labels[testing_idx]))
+
+	# 	# Return the average log loss
+	# 	return log_loss.mean()
+
+	# @staticmethod
+	# def eval_two_layer_ann(self, dropout_rate0, dropout_rate1, hidden_layer0, hidden_layer1):
+	# 	pass
 
 	def __weight_variable(self, shape):
 		initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
