@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '3'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import numpy as np
 
@@ -21,18 +24,20 @@ class ArtificialNeuralNetworkClassifier(object):
 
 		self.__create_ann(session)
 
-	def train(self, session, features, labels, num_iterations, batch_size, verbose=False):
+		tf.logging.set_verbosity(tf.logging.ERROR)
+
+	def train(self, session, features, labels, max_iterations, batch_size, verbose=False):
 		num_examples = len(features)
-		num_batches = int(np.ceil(num_examples/float(batch_size)))
+		num_batches = int(np.ceil(num_examples / float(batch_size)))
 
 		# Iteratively train the ANN for multiple epochs
-		for i in xrange(num_iterations):
+		for i in range(max_iterations):
 			# Shuffle training set into seperate batches
 			indices = np.random.permutation(num_examples)
 
 			# Run training step per batch
-			for j in xrange(num_batches):
-				batch_indices = indices[j*batch_size:(j+1)*batch_size]
+			for j in range(num_batches):
+				batch_indices = indices[(j * batch_size):((j + 1) * batch_size)]
 				self.train_step.run(feed_dict={self.x: features[batch_indices], self.y_: labels[batch_indices],
 					self.dr: self.dropout_rates})
 
@@ -41,56 +46,24 @@ class ArtificialNeuralNetworkClassifier(object):
 				print("Epoch step %d, training log loss %.5f" % (i, self.log_loss(session, features, labels)))
 
 	def predict(self, session, features):
-		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
+		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
 		return self.y.eval(feed_dict={self.x: features, self.dr: eval_drs})
 
 	def log_loss(self, session, features, labels):
-		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
+		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
 		return self.cross_entropy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 
 	def matches(self, session, features, labels):
-		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
+		eval_drs = [1.0 for i in range(self.num_dropout_rates)]
 		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 
-	# @staticmethod
-	# def eval_one_layer_ann(features, labels, num_iterations, batch_size, k_folds, num_input_neurons, num_output_neurons,
-	# 	dropout_rate0, hidden_layer0):
-	# 	# Start session
-	# 	sess = tf.InteractiveSession()
-		
-	# 	# Setup neuron and dropout rates structures
-	# 	neurons = [num_input_neurons, hidden_layer0, num_output_neurons]
-	# 	dropout_rates = [dropout_rate0]
-
-	# 	# Create the ANN
-	# 	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
-
-	# 	# Determine the k-fold cross validation indicies for training and testing
-	# 	k_folds_idx = KFold(len(features), n_folds=k_folds)
-
-	# 	# TODO: Perform k-fold cross validation
-	# 	log_loss = []
-	# 	for training_idx, testing_idx in k_folds_idx:
-	# 		# Train the ANN
-	# 		ann.train(sess, features[training_idx], labels[training_idx], num_iterations, batch_size, False)
-
-	# 		# Evaluate and save the ANN's accuracy
-	# 		log_loss.append(ann.log_loss(sess, features[testing_idx], labels[testing_idx]))
-
-	# 	# Return the average log loss
-	# 	return log_loss.mean()
-
-	# @staticmethod
-	# def eval_two_layer_ann(self, dropout_rate0, dropout_rate1, hidden_layer0, hidden_layer1):
-	# 	pass
-
 	def __weight_variable(self, shape):
-		initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
+		initial = tf.truncated_normal(shape, mean=0.0, stddev=1 / np.sqrt(shape[0]))
+		# initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
 		return tf.Variable(initial)
 
 	def __bias_variable(self, shape):
 		initial = tf.constant(0.1, shape=shape)
-		# initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
 		return tf.Variable(initial)
 
 	def __create_ann(self, session):
@@ -106,7 +79,7 @@ class ArtificialNeuralNetworkClassifier(object):
 		b = []
 		h = []
 		h_drop = []
-		for i in xrange(self.num_hidden_layers):
+		for i in range(self.num_hidden_layers):
 			# Determine proper dimensions for weight matrix and bias vector
 			if(i != 0):
 				input_count = self.layer_neurons[i]
@@ -148,4 +121,4 @@ class ArtificialNeuralNetworkClassifier(object):
 		self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
 
 		# Initialize variables
-		session.run(tf.initialize_all_variables())
+		session.run(tf.global_variables_initializer())
