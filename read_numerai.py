@@ -77,7 +77,7 @@ def read_numerai(path, num_examples, testing_percent, vector_labels):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print "Please provide valid input parameters ([path to numerai files] [number of exaples] [percentage of training for testing] [vector labels?])"
+        print("Please provide valid input parameters ([path to numerai files] [number of exaples] [percentage of training for testing] [vector labels?])")
         exit(1)
     path = sys.argv[1]
     num_examples = int(sys.argv[2])
