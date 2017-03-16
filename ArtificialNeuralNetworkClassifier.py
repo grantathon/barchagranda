@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from collections import deque
 
 
 class ArtificialNeuralNetworkClassifier(object):
@@ -32,6 +33,8 @@ class ArtificialNeuralNetworkClassifier(object):
 		validation_labels = labels[num_train_examples:]
 
 		# Iteratively train the ANN for multiple epochs
+		avg_periods = 100
+		log_losses = deque(maxlen=avg_periods)
 		for i in xrange(max_iterations):
 			# Shuffle training set into seperate batches
 			indices = np.random.permutation(num_train_examples)
@@ -42,9 +45,19 @@ class ArtificialNeuralNetworkClassifier(object):
 				self.train_step.run(feed_dict={self.x: features[batch_indices], self.y_: labels[batch_indices],
 					self.dr: self.dropout_rates})
 
+			# Early stop
+			#log_loss = self.log_loss(session, validation_features, validation_labels)
+			#log_losses.append(log_loss)
+			#if(i >= avg_periods - 1 and np.mean(log_losses) < log_loss):
+			#	print("Early stop occurred at epoch %d, log loss %.5f" % (i, log_loss))
+			#	break;
+
 			# Periodically evaluate accuracy
 			if(verbose and i % 10 == 0):
-				print("Epoch step %d, training log loss %.5f" % (i, self.log_loss(session, validation_features, validation_labels)))
+				#print("Epoch step %d, log loss %.5f" % (i, log_loss))
+				log_loss = self.log_loss(session, validation_features, validation_labels)
+				accuracy = self.matches(session, validation_features, validation_labels)
+				print("Epoch step %d, log loss %.5f, accuracy %.5f" % (i, log_loss, accuracy))
 
 	def predict(self, session, features):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
@@ -71,8 +84,9 @@ class ArtificialNeuralNetworkClassifier(object):
 		self.x = tf.placeholder(tf.float32, [None, self.num_input_neurons])
 		self.y_ = tf.placeholder(tf.float32, [None, self.num_output_neurons])
 
-		# Placeholder for dropout rates
+		# Placeholder for dropout rates and regularization parameter
 		self.dr = tf.placeholder(tf.float32, [self.num_dropout_rates])
+		#self.beta = tf.placeholder(tf.float32, 1)
 
 		# Construct the ANN layer by layer
 		W = []
@@ -93,7 +107,7 @@ class ArtificialNeuralNetworkClassifier(object):
 
 			# Create hidden layer
 			if(i != 0):
-				h.append(tf.nn.relu(tf.matmul(h_drop[i-1], W[i]) + b[i]))
+				h.append(tf.nn.relu(tf.matmul(h_drop[i - 1], W[i]) + b[i]))
 			else:
 				h.append(tf.nn.relu(tf.matmul(self.x, W[i]) + b[i]))
 
@@ -101,19 +115,25 @@ class ArtificialNeuralNetworkClassifier(object):
 			h_drop.append(tf.nn.dropout(h[i], self.dr[i]))
 			
 			# Check if hidden layer is connected to output layer
-			if(i == self.num_hidden_layers-1):
+			if(i == self.num_hidden_layers - 1):
 				# Create weight matrix and bias vector
 				W.append(self.__weight_variable([output_count, self.num_output_neurons]))
 				b.append(self.__bias_variable([self.num_output_neurons]))
 
 				# Create output layer
-				self.y = tf.nn.softmax(tf.matmul(h_drop[i], W[i+1]) + b[i+1])
+				#self.y = tf.nn.softmax(tf.matmul(h_drop[i], W[i+1]) + b[i+1])
+				self.y = tf.matmul(h_drop[i], W[i + 1]) + b[i + 1]
 
 		# Implement cross-entropy (i.e., log loss) as loss function
-		self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(self.y_*tf.log(self.y), reduction_indices=[1]))
+		loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.y))
+		regularizers = tf.nn.l2_loss(W[0])
+		for w in W[1:]:
+			regularizers += tf.nn.l2_loss(w)
+		self.cross_entropy = tf.reduce_mean(loss + 0.01 * regularizers)
+		#self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(self.y_*tf.log(self.y), reduction_indices=[1]))
 
 		# Initialize optimizer
-		# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+		#self.train_step = tf.train.GradientDescentOptimizer(0.5).minimize(self.cross_entropy)
 		self.train_step = tf.train.AdamOptimizer(0.001).minimize(self.cross_entropy)
 
 		# Determine the accuracy of the model

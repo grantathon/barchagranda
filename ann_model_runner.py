@@ -34,7 +34,7 @@ if __name__ == "__main__":
 	num_examples = int(config_data['num_examples'])
 	hidden_layers = config_data['hidden_layers']
 	dropout_rates = config_data['dropout_rates']
-	max_iterations = int(config_data['num_iterations'])
+	max_iterations = int(config_data['max_iterations'])
 	batch_size = int(config_data['batch_size'])
 	num_hidden_layers = len(hidden_layers)
 	validation_percentage = 0.1
