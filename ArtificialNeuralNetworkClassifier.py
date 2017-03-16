@@ -52,45 +52,12 @@ class ArtificialNeuralNetworkClassifier(object):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
 		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
 
-	# @staticmethod
-	# def eval_one_layer_ann(features, labels, num_iterations, batch_size, k_folds, num_input_neurons, num_output_neurons,
-	# 	dropout_rate0, hidden_layer0):
-	# 	# Start session
-	# 	sess = tf.InteractiveSession()
-		
-	# 	# Setup neuron and dropout rates structures
-	# 	neurons = [num_input_neurons, hidden_layer0, num_output_neurons]
-	# 	dropout_rates = [dropout_rate0]
-
-	# 	# Create the ANN
-	# 	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
-
-	# 	# Determine the k-fold cross validation indicies for training and testing
-	# 	k_folds_idx = KFold(len(features), n_folds=k_folds)
-
-	# 	# TODO: Perform k-fold cross validation
-	# 	log_loss = []
-	# 	for training_idx, testing_idx in k_folds_idx:
-	# 		# Train the ANN
-	# 		ann.train(sess, features[training_idx], labels[training_idx], num_iterations, batch_size, False)
-
-	# 		# Evaluate and save the ANN's accuracy
-	# 		log_loss.append(ann.log_loss(sess, features[testing_idx], labels[testing_idx]))
-
-	# 	# Return the average log loss
-	# 	return log_loss.mean()
-
-	# @staticmethod
-	# def eval_two_layer_ann(self, dropout_rate0, dropout_rate1, hidden_layer0, hidden_layer1):
-	# 	pass
-
 	def __weight_variable(self, shape):
-		initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
+		initial = tf.truncated_normal(shape, mean=0.0, stddev=1 / np.sqrt(shape[0]))
 		return tf.Variable(initial)
 
 	def __bias_variable(self, shape):
 		initial = tf.constant(0.1, shape=shape)
-		# initial = tf.truncated_normal(shape, mean=0.0, stddev=0.1)
 		return tf.Variable(initial)
 
 	def __create_ann(self, session):
