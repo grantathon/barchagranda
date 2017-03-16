@@ -37,6 +37,7 @@ if __name__ == "__main__":
 	max_iterations = int(config_data['num_iterations'])
 	batch_size = int(config_data['batch_size'])
 	num_hidden_layers = len(hidden_layers)
+	validation_percentage = 0.1
 
 	# Get system parameters
 	data_reader_uri = config_data['data_reader_uri']
@@ -97,7 +98,7 @@ if __name__ == "__main__":
 
 	# Create and train the ANN
 	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
-	ann.train(sess, train_features, train_labels, max_iterations, batch_size, 0.1 True)
+	ann.train(sess, train_features, train_labels, max_iterations, batch_size, validation_percentage, True)
 
 	# Display final log loss
 	print('Final training log loss: %.5f' % ann.log_loss(sess, train_features, train_labels))

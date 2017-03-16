@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from pprint import pprint
 
 
 class ArtificialNeuralNetworkClassifier(object):
@@ -27,11 +26,10 @@ class ArtificialNeuralNetworkClassifier(object):
 		num_validate_examples = int(num_examples * validation_percent)
 		num_train_examples = num_examples - num_validate_examples
 		num_batches = int(np.ceil(num_train_examples / float(batch_size)))
-		pprint(num_examples)
-		pprint(num_validate_examples)
-		pprint(num_train_examples)
-		pprint(num_batches)
-		print
+
+		# Separate validation examples
+		validation_features = features[num_train_examples:]
+		validation_labels = labels[num_train_examples:]
 
 		# Iteratively train the ANN for multiple epochs
 		for i in xrange(max_iterations):
@@ -46,12 +44,7 @@ class ArtificialNeuralNetworkClassifier(object):
 
 			# Periodically evaluate accuracy
 			if(verbose and i % 10 == 0):
-				pprint(features[num_train_examples:])
-				pprint(labels[num_train_examples:])
-				pprint(len(features[num_train_examples:]))
-				pprint(len(labels[num_train_examples:]))
-				exit()
-				print("Epoch step %d, training log loss %.5f" % (i, self.log_loss(session, features, labels)))
+				print("Epoch step %d, training log loss %.5f" % (i, self.log_loss(session, validation_features, validation_labels)))
 
 	def predict(self, session, features):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
