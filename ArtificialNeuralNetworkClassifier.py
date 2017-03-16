@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from pprint import pprint
 
 
 class ArtificialNeuralNetworkClassifier(object):
@@ -21,23 +22,35 @@ class ArtificialNeuralNetworkClassifier(object):
 
 		self.__create_ann(session)
 
-	def train(self, session, features, labels, num_iterations, batch_size, verbose=False):
+	def train(self, session, features, labels, max_iterations, batch_size, validation_percent, verbose=False):
 		num_examples = len(features)
-		num_batches = int(np.ceil(num_examples/float(batch_size)))
+		num_validate_examples = int(num_examples * validation_percent)
+		num_train_examples = num_examples - num_validate_examples
+		num_batches = int(np.ceil(num_train_examples / float(batch_size)))
+		pprint(num_examples)
+		pprint(num_validate_examples)
+		pprint(num_train_examples)
+		pprint(num_batches)
+		print
 
 		# Iteratively train the ANN for multiple epochs
-		for i in xrange(num_iterations):
+		for i in xrange(max_iterations):
 			# Shuffle training set into seperate batches
-			indices = np.random.permutation(num_examples)
+			indices = np.random.permutation(num_train_examples)
 
 			# Run training step per batch
 			for j in xrange(num_batches):
-				batch_indices = indices[j*batch_size:(j+1)*batch_size]
+				batch_indices = indices[(j * batch_size):((j + 1) * batch_size)]
 				self.train_step.run(feed_dict={self.x: features[batch_indices], self.y_: labels[batch_indices],
 					self.dr: self.dropout_rates})
 
 			# Periodically evaluate accuracy
-			if(verbose and i % 100 == 0):
+			if(verbose and i % 10 == 0):
+				pprint(features[num_train_examples:])
+				pprint(labels[num_train_examples:])
+				pprint(len(features[num_train_examples:]))
+				pprint(len(labels[num_train_examples:]))
+				exit()
 				print("Epoch step %d, training log loss %.5f" % (i, self.log_loss(session, features, labels)))
 
 	def predict(self, session, features):
