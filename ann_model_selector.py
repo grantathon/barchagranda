@@ -13,12 +13,17 @@ from pprint import pprint
 DROPBOX_AUTH_TOKEN = 'qECz4Lio64gAAAAAAAADKCBiIafW0-teoaxb7jaNJVjcn517S7mH0l7rwjZXbThX'
 
 
-def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
+def create_parameter_sets(hidden_layer_spaces, dropout_rate_space, learning_rate_space, regularization_param_space,
+	batch_size_space):
 	parameter_sets = []
 
 	layer_neuron_scenarios = []
 	dropout_rate_scenarios = []
 	dropout_rates = np.linspace(dropout_rate_space[0], dropout_rate_space[1], dropout_rate_space[2])
+	learning_rates = np.linspace(learning_rate_space[0], learning_rate_space[1], learning_rate_space[2])
+	regularization_params = np.linspace(regularization_param_space[0], regularization_param_space[1],
+		regularization_param_space[2])
+	batch_sizes = np.linspace(batch_size_space[0], batch_size_space[1], batch_size_space[2])
 
 	# Go through all hidden layer spaces to construct ANN parameters
 	for hls in hidden_layer_spaces:
@@ -36,6 +41,9 @@ def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
 					parameter_dict = {}
 					parameter_dict['hidden_layers'] = [j]
 					parameter_dict['dropout_rates'] = [round(dropout_rates[i], 4)]
+					parameter_dict['learning_rates'] = round(learning_rates[i], 4)
+					parameter_dict['regularization_params'] = round(regularization_params[i], 4)
+					parameter_dict['batch_sizes'] = round(batch_sizes[i], 4)
 					parameter_sets.append(parameter_dict)
 		elif(num_hidden_layers == 2):
 			for i in xrange(num_dropout_rates):
@@ -50,11 +58,6 @@ def create_parameter_sets(hidden_layer_spaces, dropout_rate_space):
 			for i in xrange(num_dropout_rates):
 				for n in xrange(num_dropout_rates):
 					for p in xrange(num_dropout_rates):
-						# parameter_dict = {}
-						# parameter_dict['hidden_layers'] = [16, 11, 6]
-						# parameter_dict['dropout_rates'] = [round(dropout_rates[i], 4), round(dropout_rates[n], 4), \
-						# 	round(dropout_rates[p], 4)]
-						# parameter_sets.append(parameter_dict)
 						for j in xrange(hls[num_hidden_layers-1][0], hls[num_hidden_layers-1][1]+1):
 							for k in xrange(j, hls[num_hidden_layers-2][1]+1):
 								for m in xrange(k, hls[num_hidden_layers-3][1]+1):
@@ -95,6 +98,9 @@ if __name__ == "__main__":
 	dropout_rate_space = config_data['dropout_rate_space']
 	num_iterations = int(config_data['num_iterations'])
 	batch_size = int(config_data['batch_size'])
+	#validation_percentage = config_data['validation_percentage']
+	#learning_rate_space = config_data['learning_rate_space']
+	#regularization_param_space = config_data['regularization_param_space']
 
 	# Get system config parameters
 	data_reader_uri = config_data['data_reader_uri']
@@ -179,7 +185,7 @@ if __name__ == "__main__":
 			raise NotImplementedError('Logistic regression is not yet supported.')
 
 		# Create ANN
-		ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
+		ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates, learning_rate, regularization_param, batch_size)
 
 		# Setup k-fold cross validation results
 		kf_results = {}
@@ -190,7 +196,7 @@ if __name__ == "__main__":
 
 		# Train and predict k times
 		for training_idx, testing_idx in k_folds_idx:
-			ann.train(sess, features[training_idx], labels[training_idx], num_iterations, batch_size, False)
+			ann.train(sess, features[training_idx], labels[training_idx], num_iterations, validation_percentage)
 
 			# Compute the training accuracies
 			kf_results['training_log_loss'].append(ann.log_loss(sess, features[training_idx], labels[training_idx]))
