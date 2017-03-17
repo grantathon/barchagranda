@@ -4,7 +4,7 @@ from collections import deque
 
 
 class ArtificialNeuralNetworkClassifier(object):
-	def __init__(self, session, neurons, dropout_rates):
+	def __init__(self, session, neurons, dropout_rates, learning_rate, regularization_param, batch_size):
 		if((len(neurons) - 2) < 0):
 			raise ValueError('There must be at least an input and output layer.')
 
@@ -16,34 +16,37 @@ class ArtificialNeuralNetworkClassifier(object):
 		self.dropout_rates = dropout_rates
 		self.num_dropout_rates = len(dropout_rates)
 		self.num_hidden_layers = len(self.hidden_neurons)
+		self.learning_rate = learning_rate
+		self.regularization_param = regularization_param
+		self.batch_size = batch_size
 
 		if(self.num_hidden_layers != self.num_dropout_rates):
 			raise ValueError('The number of dropout rates and hidden layers must be equal.')
 
 		self.__create_ann(session)
 
-	def train(self, session, features, labels, max_iterations, batch_size, validation_percent, verbose=False):
+	def train(self, session, features, labels, max_iterations, validation_percent, verbose=False):
 		num_examples = len(features)
 		num_validate_examples = int(num_examples * validation_percent)
 		num_train_examples = num_examples - num_validate_examples
-		num_batches = int(np.ceil(num_train_examples / float(batch_size)))
+		num_batches = int(np.ceil(num_train_examples / float(self.batch_size)))
 
 		# Separate validation examples
 		validation_features = features[num_train_examples:]
 		validation_labels = labels[num_train_examples:]
 
 		# Iteratively train the ANN for multiple epochs
-		avg_periods = 100
-		log_losses = deque(maxlen=avg_periods)
+		#avg_periods = 100
+		#log_losses = deque(maxlen=avg_periods)
 		for i in xrange(max_iterations):
 			# Shuffle training set into seperate batches
 			indices = np.random.permutation(num_train_examples)
 
 			# Run training step per batch
 			for j in xrange(num_batches):
-				batch_indices = indices[(j * batch_size):((j + 1) * batch_size)]
+				batch_indices = indices[(j * self.batch_size):((j + 1) * self.batch_size)]
 				self.train_step.run(feed_dict={self.x: features[batch_indices], self.y_: labels[batch_indices],
-					self.dr: self.dropout_rates})
+					self.dr: self.dropout_rates, self.eta: self.learning_rate, self.beta: self.regularization_param})
 
 			# Early stop
 			#log_loss = self.log_loss(session, validation_features, validation_labels)
@@ -61,18 +64,21 @@ class ArtificialNeuralNetworkClassifier(object):
 
 	def predict(self, session, features):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
-		return self.y.eval(feed_dict={self.x: features, self.dr: eval_drs})
+		return self.y.eval(feed_dict={self.x: features, self.dr: eval_drs, self.eta: self.learning_rate,
+			self.beta: self.regularization_param})
 
 	def log_loss(self, session, features, labels):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
-		return self.cross_entropy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
+		return self.cross_entropy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs,
+			self.eta: self.learning_rate, self.beta: self.regularization_param})
 
 	def matches(self, session, features, labels):
 		eval_drs = [1.0 for i in xrange(self.num_dropout_rates)]
-		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs})
+		return self.accuracy.eval(feed_dict={self.x: features, self.y_: labels, self.dr: eval_drs,
+			self.eta: self.learning_rate, self.beta: self.regularization_param})
 
 	def __weight_variable(self, shape):
-		initial = tf.truncated_normal(shape, mean=0.0, stddev=1 / np.sqrt(shape[0]))
+		initial = tf.truncated_normal(shape, mean=0.0, stddev=(1 / np.sqrt(shape[0])))
 		return tf.Variable(initial)
 
 	def __bias_variable(self, shape):
@@ -86,7 +92,8 @@ class ArtificialNeuralNetworkClassifier(object):
 
 		# Placeholder for dropout rates and regularization parameter
 		self.dr = tf.placeholder(tf.float32, [self.num_dropout_rates])
-		#self.beta = tf.placeholder(tf.float32, 1)
+		self.eta = tf.placeholder(tf.float32, [])
+		self.beta = tf.placeholder(tf.float32, [])
 
 		# Construct the ANN layer by layer
 		W = []
@@ -121,7 +128,6 @@ class ArtificialNeuralNetworkClassifier(object):
 				b.append(self.__bias_variable([self.num_output_neurons]))
 
 				# Create output layer
-				#self.y = tf.nn.softmax(tf.matmul(h_drop[i], W[i+1]) + b[i+1])
 				self.y = tf.matmul(h_drop[i], W[i + 1]) + b[i + 1]
 
 		# Implement cross-entropy (i.e., log loss) as loss function
@@ -129,12 +135,11 @@ class ArtificialNeuralNetworkClassifier(object):
 		regularizers = tf.nn.l2_loss(W[0])
 		for w in W[1:]:
 			regularizers += tf.nn.l2_loss(w)
-		self.cross_entropy = tf.reduce_mean(loss + 0.01 * regularizers)
-		#self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(self.y_*tf.log(self.y), reduction_indices=[1]))
+		self.cross_entropy = tf.reduce_mean(loss + self.beta * regularizers)
 
 		# Initialize optimizer
-		#self.train_step = tf.train.GradientDescentOptimizer(0.5).minimize(self.cross_entropy)
-		self.train_step = tf.train.AdamOptimizer(0.001).minimize(self.cross_entropy)
+		#self.train_step = tf.train.GradientDescentOptimizer(self.eta).minimize(self.cross_entropy)
+		self.train_step = tf.train.AdamOptimizer(self.eta).minimize(self.cross_entropy)
 
 		# Determine the accuracy of the model
 		self.correct_prediction = tf.equal(tf.argmax(self.y,1), tf.argmax(self.y_,1))

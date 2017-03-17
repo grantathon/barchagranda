@@ -37,7 +37,9 @@ if __name__ == "__main__":
 	max_iterations = int(config_data['max_iterations'])
 	batch_size = int(config_data['batch_size'])
 	num_hidden_layers = len(hidden_layers)
-	validation_percentage = 0.1
+	validation_percentage = float(config_data['validation_percentage'])
+	learning_rate = float(config_data['learning_rate'])
+	regularization_param = float(config_data['regularization_param'])
 
 	# Get system parameters
 	data_reader_uri = config_data['data_reader_uri']
@@ -97,8 +99,8 @@ if __name__ == "__main__":
 		raise NotImplementedError('Logistic regression is not yet supported.')
 
 	# Create and train the ANN
-	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates)
-	ann.train(sess, train_features, train_labels, max_iterations, batch_size, validation_percentage, True)
+	ann = ArtificialNeuralNetworkClassifier(sess, neurons, dropout_rates, learning_rate, regularization_param, batch_size)
+	ann.train(sess, train_features, train_labels, max_iterations, validation_percentage, True)
 
 	# Display final log loss
 	print('Final training log loss: %.5f' % ann.log_loss(sess, train_features, train_labels))
